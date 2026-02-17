@@ -28,12 +28,8 @@ DEFAULT_FROM_EMAIL = 'noreply@catalog.ru'
 SERVER_EMAIL = 'noreply@catalog.ru'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!h$ru#9*0cy@a$fr8gr#vzz3s!vpv*m5ce6%)0e_r#-2@$bc@4'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 AUTH_USER_MODEL = 'users.User'
 
 # Application definition

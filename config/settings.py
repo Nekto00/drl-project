@@ -29,7 +29,10 @@ SERVER_EMAIL = 'noreply@catalog.ru'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 AUTH_USER_MODEL = 'users.User'
 
 # Application definition

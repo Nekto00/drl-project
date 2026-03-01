@@ -10,7 +10,8 @@ requires-python = ">=3.13"
 dependencies = [
     "dotenv (>=0.9.9,<0.10.0)",
     "pillow (>=12.1.1,<13.0.0)",
-    "django-filter (>=25.2,<26.0)"
+    "django-filter (>=25.2,<26.0)",
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)"
 ]
 
 

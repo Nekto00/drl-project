@@ -1,0 +1,42 @@
+[
+  {
+    "model": "users.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$testpasswordhash",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "Иван",
+      "last_name": "Иванов",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-01T00:00:00Z",
+      "email": "ivan@example.com",
+      "phone": "1234567890",
+      "city": "Москва",
+      "avatar": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$600000$testpasswordhash",
+      "last_login": null,
+      "is_superuser": false,
+      "first_name": "Петр",
+      "last_name": "Петров",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2025-01-01T00:00:00Z",
+      "email": "petr@example.com",
+      "phone": "0987654321",
+      "city": "Санкт-Петербург",
+      "avatar": "",
+      "groups": [],
+      "user_permissions": []
+    }
+  }
+]

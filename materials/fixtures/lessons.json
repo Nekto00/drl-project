@@ -1,0 +1,35 @@
+[
+  {
+    "model": "materials.lesson",
+    "pk": 1,
+    "fields": {
+      "title": "Введение в Python",
+      "description": "Первый урок курса Python",
+      "preview": "",
+      "video_url": "https://youtube.com/watch?v=123",
+      "course": 1
+    }
+  },
+  {
+    "model": "materials.lesson",
+    "pk": 2,
+    "fields": {
+      "title": "Основы синтаксиса Python",
+      "description": "Второй урок курса Python",
+      "preview": "",
+      "video_url": "https://youtube.com/watch?v=456",
+      "course": 1
+    }
+  },
+  {
+    "model": "materials.lesson",
+    "pk": 3,
+    "fields": {
+      "title": "Введение в Django",
+      "description": "Первый урок курса Django",
+      "preview": "",
+      "video_url": "https://youtube.com/watch?v=789",
+      "course": 2
+    }
+  }
+]

@@ -1,20 +1,27 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import Course, Lesson
+from django.shortcuts import get_object_or_404
+from .models import Course, Lesson, Subscription
 from .serializers import CourseSerializer, LessonSerializer
-from .permissions import IsModerator, IsModeratorOrOwner
+from .permissions import (
+    IsModeratorOrOwnerForCourse,
+    IsModeratorOrOwnerForLesson
+)
+from .paginators import CoursePaginator, LessonPaginator
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CoursePaginator
 
     def get_permissions(self):
         """Динамическое определение прав в зависимости от действия"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsModeratorOrOwner]
+            self.permission_classes = [IsAuthenticated, IsModeratorOrOwnerForCourse]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -43,13 +50,18 @@ class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = LessonPaginator
 
     def get_permissions(self):
+        """Разные права для разных методов"""
         if self.request.method == 'POST':
-            self.permission_classes = [IsAuthenticated, IsModeratorOrOwner]
+            self.permission_classes = [IsAuthenticated, IsModeratorOrOwnerForLesson]
+        else:
+            self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
 
     def get_queryset(self):
+        """Фильтрация queryset в зависимости от прав"""
         user = self.request.user
 
         # Модераторы видят все уроки
@@ -70,16 +82,69 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """Разные права для разных методов"""
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            self.permission_classes = [IsAuthenticated, IsModeratorOrOwner]
+            self.permission_classes = [IsAuthenticated, IsModeratorOrOwnerForLesson]
+        else:
+            self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
 
     def get_queryset(self):
+        """Не фильтруем queryset здесь, чтобы 404 не возникало раньше времени"""
+        return Lesson.objects.all()  # Убираем фильтрацию
+
+    def get_object(self):
+        """Переопределяем get_object для проверки прав доступа"""
+        obj = super().get_object()
         user = self.request.user
 
-        # Модераторы видят все уроки
-        if user.groups.filter(name='Модераторы').exists():
-            return Lesson.objects.all()
+        # Если пользователь не модератор и не владелец, возвращаем 403
+        if not user.groups.filter(name='Модераторы').exists() and obj.owner != user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("У вас нет прав для доступа к этому уроку")
 
-        # Обычные пользователи видят свои уроки
-        return Lesson.objects.filter(owner=user)
+        return obj
+
+
+class SubscriptionView(APIView):
+    """
+    View для управления подпиской на курс
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        course_id = request.data.get('course_id')
+
+        if not course_id:
+            return Response(
+                {"error": "Не указан ID курса"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        course = get_object_or_404(Course, id=course_id)
+
+        # Проверяем существование подписки
+        subscription = Subscription.objects.filter(
+            user=user,
+            course=course
+        )
+
+        if subscription.exists():
+            # Если подписка есть - удаляем
+            subscription.delete()
+            message = 'Подписка удалена'
+            status_code = status.HTTP_200_OK
+        else:
+            # Если подписки нет - создаем
+            Subscription.objects.create(
+                user=user,
+                course=course
+            )
+            message = 'Подписка добавлена'
+            status_code = status.HTTP_201_CREATED
+
+        return Response(
+            {"message": message},
+            status=status_code
+        )

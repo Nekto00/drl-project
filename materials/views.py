@@ -6,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
+from django.utils import timezone
+from .tasks import notify_course_subscribers, notify_course_update_with_check
 from config import settings
 from .models import Course, Lesson, Subscription, Payment
 from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer, PaymentCreateSerializer
@@ -48,8 +49,18 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
     def perform_update(self, serializer):
-        """При обновлении сохраняем владельца"""
+        """При обновлении курса отправляем уведомления подписчикам"""
+        course = serializer.instance
+        last_update = course.updated_at if hasattr(course, 'updated_at') else timezone.now()
+
+        # Сохраняем обновление
         serializer.save()
+
+        # Для базового задания - просто отправляем уведомление
+        # notify_course_subscribers.delay(course.id)
+
+        # Для дополнительного задания - с проверкой времени
+        notify_course_update_with_check.delay(course.id, last_update)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):

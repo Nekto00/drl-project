@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'drf_yasg',
+    'django_celery_beat',
     'rest_framework_simplejwt',
     'materials',
     'users',
@@ -207,3 +208,56 @@ SWAGGER_SETTINGS = {
         'patch'
     ],
 }
+
+# ============================================
+# НАСТРОЙКИ REDIS
+# ============================================
+
+# Redis connection settings
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_URL = os.getenv('REDIS_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}')
+
+# ============================================
+# НАСТРОЙКИ CELERY
+# ============================================
+
+# URL брокера сообщений (Redis)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+
+# Бэкенд для результатов
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
+
+# Настройки сериализации - используем только json
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Часовой пояс для Celery
+CELERY_TIMEZONE = TIME_ZONE
+
+# Отключаем устаревшие настройки
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+# Важно для предотвращения ошибок сериализации
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_RESULT_EXPIRES = 3600  # Результаты хранятся 1 час
+
+# Настройки для beat
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# ============================================
+# НАСТРОЙКИ EMAIL ДЛЯ ОТПРАВКИ ПИСЕМ
+# ============================================
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

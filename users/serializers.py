@@ -11,18 +11,32 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    """
+    Сериализатор для регистрации нового пользователя
+    """
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={'input_type': 'password'},
+        help_text="Пароль пользователя"
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={'input_type': 'password'},
+        help_text="Подтверждение пароля"
+    )
 
     class Meta:
         model = User
         fields = ('email', 'password', 'password2', 'first_name', 'last_name', 'phone', 'city', 'avatar')
         extra_kwargs = {
-            'first_name': {'required': False, 'allow_blank': True},
-            'last_name': {'required': False, 'allow_blank': True},
-            'phone': {'required': False, 'allow_blank': True},
-            'city': {'required': False, 'allow_blank': True},
-            'avatar': {'required': False},
+            'email': {'help_text': 'Email пользователя (используется для входа)'},
+            'first_name': {'help_text': 'Имя пользователя', 'required': False},
+            'last_name': {'help_text': 'Фамилия пользователя', 'required': False},
+            'phone': {'help_text': 'Номер телефона', 'required': False},
+            'city': {'help_text': 'Город проживания', 'required': False},
+            'avatar': {'help_text': 'Аватар пользователя', 'required': False},
         }
 
     def validate(self, attrs):

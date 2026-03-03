@@ -1,10 +1,12 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
-from .models import Course, Lesson, Subscription
+from .models import Course, Lesson, Subscription, Payment
 
 User = get_user_model()
 
@@ -261,3 +263,56 @@ class SubscriptionTestCase(APITestCase):
             context={'request': request}
         )
         self.assertFalse(serializer.data['is_subscribed'])
+
+
+class PaymentTestCase(APITestCase):
+    """
+    Тесты для платежей
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='user@test.com',
+            password='testpass123'
+        )
+
+        self.course = Course.objects.create(
+            title='Тестовый курс',
+            description='Описание',
+            owner=self.user
+        )
+
+        self.client = APIClient()
+        self.payment_create_url = reverse('payment-create')
+
+    @patch('materials.services.stripe_service.create_stripe_product')
+    @patch('materials.services.stripe_service.create_stripe_price')
+    @patch('materials.services.stripe_service.create_stripe_checkout_session')
+    def test_create_payment(self, mock_session, mock_price, mock_product):
+        """Тест создания платежа"""
+        # Настройка моков
+        mock_product.return_value = {
+            'success': True,
+            'product_id': 'prod_test123'
+        }
+        mock_price.return_value = {
+            'success': True,
+            'price_id': 'price_test123'
+        }
+        mock_session.return_value = {
+            'success': True,
+            'session_id': 'session_test123',
+            'session_url': 'https://checkout.stripe.com/test'
+        }
+
+        self.client.force_authenticate(user=self.user)
+        data = {
+            'course_id': self.course.id,
+            'success_url': 'http://localhost:8000/success/',
+            'cancel_url': 'http://localhost:8000/cancel/'
+        }
+
+        response = self.client.post(self.payment_create_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(Payment.objects.first().user, self.user)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson, Subscription
+from .models import Course, Lesson, Subscription, Payment
 from .validators import validate_youtube_url
 
 
@@ -37,3 +37,21 @@ class CourseSerializer(serializers.ModelSerializer):
                 course=obj
             ).exists()
         return False
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для платежей
+    """
+    class Meta:
+        model = Payment
+        fields = '__all__'
+        read_only_fields = ('stripe_product_id', 'stripe_price_id', 'stripe_session_id', 'payment_url', 'status')
+
+class PaymentCreateSerializer(serializers.Serializer):
+    """
+    Сериализатор для создания платежа
+    """
+    course_id = serializers.IntegerField(help_text="ID курса для оплаты")
+    success_url = serializers.URLField(help_text="URL для перенаправления после успешной оплаты")
+    cancel_url = serializers.URLField(help_text="URL для перенаправления при отмене оплаты")

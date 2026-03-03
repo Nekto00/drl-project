@@ -12,7 +12,9 @@ dependencies = [
     "pillow (>=12.1.1,<13.0.0)",
     "django-filter (>=25.2,<26.0)",
     "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
-    "coverage (>=7.13.4,<8.0.0)"
+    "coverage (>=7.13.4,<8.0.0)",
+    "drf-yasg (>=1.21.15,<2.0.0)",
+    "stripe (>=14.4.0,<15.0.0)"
 ]
 
 

@@ -29,6 +29,15 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для ра�
 DEFAULT_FROM_EMAIL = 'noreply@catalog.ru'
 SERVER_EMAIL = 'noreply@catalog.ru'
 
+# Stripe settings
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+# Проверка, что ключи загружены
+if not STRIPE_SECRET_KEY:
+    raise ValueError("STRIPE_SECRET_KEY не установлен в переменных окружения")
+if not STRIPE_PUBLIC_KEY:
+    raise ValueError("STRIPE_PUBLISHABLE_KEY не установлен в переменных окружения")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -48,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'rest_framework',
+    'drf_yasg',
     'rest_framework_simplejwt',
     'materials',
     'users',
@@ -176,4 +186,24 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 
     'JTI_CLAIM': 'jti',
+}
+
+# Настройки для drf-yasg
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+        'delete',
+        'patch'
+    ],
 }

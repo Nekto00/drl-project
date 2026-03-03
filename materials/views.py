@@ -1,10 +1,16 @@
+from decimal import Decimal
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+from config import settings
+from .models import Course, Lesson, Subscription, Payment
+from .serializers import CourseSerializer, LessonSerializer, PaymentSerializer, PaymentCreateSerializer
+from .services import stripe_service
 from .permissions import (
     IsModeratorOrOwnerForCourse,
     IsModeratorOrOwnerForLesson
@@ -112,6 +118,43 @@ class SubscriptionView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['course_id'],
+            properties={
+                'course_id': openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description='ID курса для подписки/отписки'
+                ),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description='Подписка удалена',
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            201: openapi.Response(
+                description='Подписка добавлена',
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'message': openapi.Schema(type=openapi.TYPE_STRING)
+                    }
+                )
+            ),
+            400: 'Не указан ID курса',
+            401: 'Не авторизован',
+            404: 'Курс не найден',
+        },
+        operation_description="Управление подпиской на курс (создание/удаление)"
+    )
+
     def post(self, request):
         user = request.user
         course_id = request.data.get('course_id')
@@ -148,3 +191,141 @@ class SubscriptionView(APIView):
             {"message": message},
             status=status_code
         )
+
+
+class PaymentCreateView(APIView):
+    """
+    View для создания платежа
+    """
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=PaymentCreateSerializer,
+        responses={
+            201: PaymentSerializer(),
+            400: 'Ошибка валидации',
+            401: 'Не авторизован',
+            404: 'Курс не найден',
+            500: 'Ошибка Stripe'
+        }
+    )
+    def post(self, request):
+        # Проверяем наличие ключей Stripe
+        if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PUBLIC_KEY:
+            return Response(
+                {"error": "Stripe не настроен. Обратитесь к администратору."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        serializer = PaymentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        course_id = serializer.validated_data['course_id']
+        success_url = serializer.validated_data['success_url']
+        cancel_url = serializer.validated_data['cancel_url']
+
+        try:
+            course = Course.objects.get(id=course_id)
+        except Course.DoesNotExist:
+            return Response(
+                {"error": "Курс не найден"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Создаем продукт в Stripe
+        product_result = stripe_service.create_stripe_product(
+            name=course.title,
+            description=course.description
+        )
+
+        if not product_result['success']:
+            return Response(
+                {"error": f"Ошибка создания продукта: {product_result['error']}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Создаем цену в Stripe
+        price_result = stripe_service.create_stripe_price(
+            amount=Decimal('1000.00'),
+            product_id=product_result['product_id']
+        )
+
+        if not price_result['success']:
+            return Response(
+                {"error": f"Ошибка создания цены: {price_result['error']}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Создаем сессию оплаты
+        session_result = stripe_service.create_stripe_checkout_session(
+            price_id=price_result['price_id'],
+            success_url=success_url,
+            cancel_url=cancel_url
+        )
+
+        if not session_result['success']:
+            return Response(
+                {"error": f"Ошибка создания сессии: {session_result['error']}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Создаем запись о платеже в БД
+        payment = Payment.objects.create(
+            user=request.user,
+            course=course,
+            amount=Decimal('1000.00'),
+            stripe_product_id=product_result['product_id'],
+            stripe_price_id=price_result['price_id'],
+            stripe_session_id=session_result['session_id'],
+            payment_url=session_result['session_url']
+        )
+
+        response_serializer = PaymentSerializer(payment)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PaymentRetrieveView(APIView):
+    """
+    View для получения информации о платеже
+    """
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        responses={
+            200: PaymentSerializer(),
+            401: 'Не авторизован',
+            403: 'Нет доступа',
+            404: 'Платеж не найден'
+        }
+    )
+    def get(self, request, payment_id):
+        try:
+            payment = Payment.objects.get(id=payment_id)
+        except Payment.DoesNotExist:
+            return Response(
+                {"error": "Платеж не найден"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Проверяем, что пользователь имеет доступ к платежу
+        if payment.user != request.user and not request.user.is_staff:
+            return Response(
+                {"error": "Нет доступа к этому платежу"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Получаем актуальный статус из Stripe
+        if payment.stripe_session_id:
+            session_result = stripe_service.retrieve_stripe_session(
+                payment.stripe_session_id
+            )
+            if session_result['success']:
+                # Обновляем статус в БД
+                if session_result['payment_status'] == 'paid':
+                    payment.status = Payment.PaymentStatus.PAID
+                elif session_result['payment_status'] == 'unpaid':
+                    payment.status = Payment.PaymentStatus.PENDING
+                payment.save()
+
+        serializer = PaymentSerializer(payment)
+        return Response(serializer.data)

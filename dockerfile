@@ -25,8 +25,5 @@ COPY . .
 # Создаем директории для статики и медиа
 RUN mkdir -p /app/static /app/media
 
-# Делаем скрипт исполняемым
-RUN chmod +x /app/entrypoint.sh
-
 # Команда по умолчанию
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

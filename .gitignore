@@ -152,6 +152,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Docker
+*.pid
+docker-compose.override.yml
+
 # Pyre type checker
 .pyre/
 

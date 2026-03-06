@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name _;  # Замените на ваш IP или домен
+    server_name 51.250.111.96;
 
     location = /favicon.ico { access_log off; log_not_found off; }
 

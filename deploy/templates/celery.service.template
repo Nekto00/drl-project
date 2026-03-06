@@ -1,0 +1,15 @@
+[Unit]
+Description=Celery Service for drl-project
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/drl-project
+EnvironmentFile=/var/www/drl-project/.env
+ExecStart=/var/www/drl-project/venv/bin/celery -A config worker --loglevel=info
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

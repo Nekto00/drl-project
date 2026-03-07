@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches: [ developer, main ]
-  workflow_dispatch:  # позволяет запускать вручную
+  workflow_dispatch:
 
 jobs:
   test:
@@ -34,29 +34,40 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-
+    
     - name: Debug Secrets
       env:
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}  # ИСПРАВЛЕНО!
+        STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         echo "STRIPE_SECRET_KEY длина: ${#STRIPE_SECRET_KEY}"
         echo "STRIPE_PUBLIC_KEY длина: ${#STRIPE_PUBLIC_KEY}"
+        echo "SECRET_KEY длина: ${#SECRET_KEY}"
+        
         if [ -z "$STRIPE_SECRET_KEY" ]; then
           echo "❌ STRIPE_SECRET_KEY is empty!"
           exit 1
         else
           echo "✅ STRIPE_SECRET_KEY is set"
         fi
+        
         if [ -z "$STRIPE_PUBLIC_KEY" ]; then
           echo "❌ STRIPE_PUBLIC_KEY is empty!"
           exit 1
         else
           echo "✅ STRIPE_PUBLIC_KEY is set"
         fi
+        
+        if [ -z "$SECRET_KEY" ]; then
+          echo "❌ SECRET_KEY is empty!"
+          exit 1
+        else
+          echo "✅ SECRET_KEY is set"
+        fi
     
     - name: Run tests
-     env:
+      env:
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
         STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -75,7 +86,7 @@ jobs:
     needs: test
     if: success() && github.ref == 'refs/heads/developer'
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Deploy to server
       uses: appleboy/ssh-action@v1.0.0

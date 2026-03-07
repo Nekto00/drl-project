@@ -38,21 +38,27 @@ jobs:
     - name: Debug Secrets
       env:
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+        STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}  # ИСПРАВЛЕНО!
       run: |
         echo "STRIPE_SECRET_KEY длина: ${#STRIPE_SECRET_KEY}"
-        echo "STRIPE_PUBLISHABLE_KEY длина: ${#STRIPE_PUBLISHABLE_KEY}"
+        echo "STRIPE_PUBLIC_KEY длина: ${#STRIPE_PUBLIC_KEY}"
         if [ -z "$STRIPE_SECRET_KEY" ]; then
           echo "❌ STRIPE_SECRET_KEY is empty!"
           exit 1
         else
           echo "✅ STRIPE_SECRET_KEY is set"
         fi
+        if [ -z "$STRIPE_PUBLIC_KEY" ]; then
+          echo "❌ STRIPE_PUBLIC_KEY is empty!"
+          exit 1
+        else
+          echo "✅ STRIPE_PUBLIC_KEY is set"
+        fi
     
     - name: Run tests
-      env:
+     env:
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+        STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DB_NAME: test_db
         DB_USER: postgres

@@ -68,7 +68,7 @@ services:
       - PYTHONUNBUFFERED=1
     networks:
       - drl_network
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
 
   # Celery worker
   celery:

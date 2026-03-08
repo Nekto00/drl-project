@@ -5,6 +5,24 @@
 
 ---
 
+## Запуск через Docker
+
+```bash
+# Клонировать репозиторий
+git clone https://github.com/Nekto00/drl-project.git
+cd drl-project
+
+# Создать .env из шаблона
+cp .env_example .env
+# Отредактировать .env (добавить свои ключи)
+
+# Запустить все сервисы
+docker-compose up -d
+
+# Остановить
+docker-compose down
+```
+
 ## Деплой на удаленный сервер (Ubuntu 22.04)
 
 ### Предварительные требования

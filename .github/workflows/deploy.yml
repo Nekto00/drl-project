@@ -57,7 +57,7 @@ jobs:
           script: |
             cd /home/${{ secrets.SERVER_USER }}/drl-project
             git pull origin homework_36
-            cp .env .env  # убедитесь что .env есть
+            cp .env .env 
             docker-compose down
             docker-compose up -d --build
             docker system prune -f

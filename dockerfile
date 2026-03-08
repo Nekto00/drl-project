@@ -13,11 +13,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DJANGO_SETTINGS_MODULE=config.settings
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
 RUN mkdir -p /app/static /app/media
 
-# Измените команду на Gunicorn для продакшена
+# Проверьте, что gunicorn установлен
+RUN which gunicorn || echo "gunicorn not found"
+
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

@@ -71,7 +71,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t drl-backend .
-          docker tag drl-backend ${{ secrets.DOCKER_USERNAME }}/drl-backend:latest
+          docker save drl-backend > drl-backend.tar
 
   deploy:
     needs: build

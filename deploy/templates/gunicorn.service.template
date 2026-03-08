@@ -1,0 +1,16 @@
+[Unit]
+Description=gunicorn daemon for drl-project
+After=network.target
+
+[Service]
+User=deploy
+Group=www-data
+WorkingDirectory=/var/www/drl-project
+EnvironmentFile=/var/www/drl-project/.env
+ExecStart=/var/www/drl-project/venv/bin/gunicorn \
+          --workers 3 \
+          --bind unix:/var/www/drl-project/drl-project.sock \
+          config.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

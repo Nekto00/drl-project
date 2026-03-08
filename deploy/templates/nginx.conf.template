@@ -1,0 +1,19 @@
+server {
+    listen 80;
+    server_name 51.250.111.96;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location /static/ {
+        alias /var/www/drl-project/static/;
+    }
+
+    location /media/ {
+        alias /var/www/drl-project/media/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/drl-project/drl-project.sock;
+    }
+}

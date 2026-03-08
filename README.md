@@ -21,6 +21,7 @@
 ```bash
 ssh ваш_пользователь@ваш_ip_сервера
 # Пример: ssh august@51.250.111.96
+```
 
 #### 1.2 Обновление системы и установка пакетов
 
@@ -34,6 +35,7 @@ sudo apt install python3.12 python3.12-venv python3.12-dev -y
 # Установка PostgreSQL, Nginx, Redis
 sudo apt install postgresql postgresql-contrib nginx git redis-server -y
 sudo apt install build-essential libpq-dev -y
+```
 
 #### 1.3 Запуск сервисов
 
@@ -42,6 +44,7 @@ sudo systemctl start postgresql
 sudo systemctl enable postgresql
 sudo systemctl start redis-server
 sudo systemctl enable redis-server
+```
 
 ### **Часть 2: Клонирование проекта**
 
@@ -52,26 +55,31 @@ sudo chown -R $USER:$USER drl-project
 cd drl-project
 # Клонирование ветки developer
 git clone --branch developer https://github.com/Nekto00/drl-project.git .
+```
 
 ### **Часть 3: Настройка виртуального окружения**
 
 ```bash
 # Создание виртуального окружения
 python3.12 -m venv venv
+```
 ```bash
 # Активация
 source venv/bin/activate
+```
 ```bash
 # Установка зависимостей
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install gunicorn
+```
 
 ### **Часть 4: Настройка PostgreSQL**
 
 ```bash
 # Создание базы данных и пользователя
 sudo -u postgres psql
+```
 ```bash
 CREATE DATABASE "Drl";
 CREATE USER django_user WITH PASSWORD '12345';
@@ -80,11 +88,13 @@ ALTER ROLE django_user SET default_transaction_isolation TO 'read committed';
 ALTER ROLE django_user SET timezone TO 'UTC';
 GRANT ALL PRIVILEGES ON DATABASE "Drl" TO django_user;
 \q
+```
 ```bash
 # Проверка подключения
 psql -U django_user -d Drl -h localhost -W
 # Пароль: 12345
 # \q для выхода
+```
 
 ### **Часть 5: Создание .env файла**
 
@@ -99,6 +109,7 @@ DB_PASSWORD=ПАРОЛЬ
 DB_HOST=localhost
 DB_PORT=5432
 # Остальные настройки...
+```
 
 ### **Часть 6: Миграции и запуск**
 
@@ -108,11 +119,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
+```
 
 ### **Часть 7: Настройка Gunicorn**
 
 ```bash
 sudo nano /etc/systemd/system/gunicorn.service
+```
 ```bash
 [Unit]
 Description=gunicorn daemon
@@ -129,14 +142,17 @@ ExecStart=/var/www/drl-project/venv/bin/gunicorn \
 
 [Install]
 WantedBy=multi-user.target
+```
 ```bash
 sudo systemctl start gunicorn
 sudo systemctl enable gunicorn
+```
 
 ### **Часть 8: Настройка Nginx**
 
 ```bash
 sudo nano /etc/nginx/sites-available/drl-project
+```
 
 ```bash
 server {
@@ -151,7 +167,9 @@ server {
         proxy_pass http://unix:/var/www/drl-project/drl-project.sock;
     }
 }
+```
 ```bash
 sudo ln -s /etc/nginx/sites-available/drl-project /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
+```
